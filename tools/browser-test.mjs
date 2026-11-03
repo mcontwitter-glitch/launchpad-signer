@@ -12,7 +12,7 @@ if (FORK === 'live') { const b = await chromium.launch(); const pg = await b.new
   console.log('nav:', await pg.textContent('#chainNav'), '| others:', await pg.textContent('#othersInfo'), '| cost:', await pg.textContent('#costInfo'));
   await b.close(); console.log(fail ? fail + ' FAILURES' : 'ALL PASS'); process.exit(fail ? 1 : 0); }
 const rpc = async (m, p = []) => (await (await fetch(FORK, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: m, params: p }) })).json()).result;
-await rpc('anvil_impersonateAccount', [D]); await rpc('anvil_setBalance', [D, '0x8AC7230489E80000']);
+await rpc('anvil_impersonateAccount', [D]); await rpc('anvil_setBalance', [D, '0xD3C21BCECCEDA1000000']);
 const b = await chromium.launch(); const pg = await b.newPage(); let fail = 0; const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fail++; };
 pg.on('pageerror', e => { console.log('PAGEERROR', e.message); fail++; });
 await pg.addInitScript(([fork, d]) => { window.ethereum = { isMetaMask: true, on() {}, async request({ method, params }) {

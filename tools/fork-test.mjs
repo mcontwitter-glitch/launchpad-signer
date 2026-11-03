@@ -10,7 +10,7 @@ async function done(ch) { if (ch.type === 'code') return (await rpc('eth_getCode
   if (ch.type === 'eq') return (await ethCall(ch)).toLowerCase() === ch.expect; if (ch.type === 'nonzero') { const r = await ethCall(ch); return r.length > 2 && BigInt(r) > 0n; }
   const r = await Promise.all(ch.of.map(c => ethCall(c).then(x => x.toLowerCase() === c.expect))); return ch.type === 'all' ? r.every(Boolean) : r.some(Boolean); }
 if (Number(await rpc('eth_chainId')) !== PL.chainId) throw Error('fork chainId is not ' + PL.chainId);
-const D = PL.deployer; await rpc('anvil_impersonateAccount', [D]); await rpc('anvil_setBalance', [D, '0x8AC7230489E80000']);
+const D = PL.deployer; await rpc('anvil_impersonateAccount', [D]); await rpc('anvil_setBalance', [D, '0xD3C21BCECCEDA1000000']);
 const gas = {}; let fail = 0; const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fail++; };
 ok(Number(await rpc('eth_getTransactionCount', [D, 'latest'])) === PL.startNonce, 'start nonce ' + PL.startNonce);
 for (const s of PL.steps) {
