@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MultiSea launchpad · Base mainnet deploy signer</title>
+<title>MultiSea launchpad · mainnet deploy signer</title>
 <style>
 :root{--bg:#000;--card:#0d0d0d;--line:#222;--fg:#eaeaea;--mut:#8a8a8a;--acc:#f5c542;--ok:#4ade80;--bad:#f87171}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
@@ -11,27 +11,33 @@ button:disabled{background:#333;color:#777;cursor:not-allowed}button.sec{backgro
 .ok{color:var(--ok)}.bad{color:var(--bad)}table{width:100%;border-collapse:collapse}td{padding:3px 0;vertical-align:top}td:first-child{color:var(--mut);width:120px}
 a{color:var(--acc)}.note{border-left:3px solid var(--acc);padding:8px 10px;background:#111;font-size:13px;margin:10px 0}.warn{border-left-color:var(--bad)}
 </style></head><body><main>
-<h1>MultiSea launchpad · Base mainnet deploy</h1>
-<p class="mut">24 transactions on <b>Base (8453)</b>, all from your wallet <span class="mono">0xb19F00e095B1387061d73751C772bbA848D196b1</span> (deployer, and timelock proposer/executor for steps 23–24). This page holds no keys; it only asks your wallet to send the exact pre-built transactions below, one at a time.</p>
-<div class="note warn"><b>Do not use this wallet for ANY other transaction on Base, Ethereum, BNB Chain, ApeChain or Robinhood Chain</b> until every chain's launchpad deploy is finished. Contract addresses — including the cross-chain peers set in steps 8, 11, 14, 17 — are predicted from this wallet's current nonce on each chain. One stray transaction (a swap, an approval, a cancelled tx) moves the addresses and breaks the peers. Before every step this page re-reads your Base nonce and refuses to send if it is not exactly the expected one.</div>
+<div id="chainNav" class="mut"></div>
+<h1>MultiSea launchpad · <span class="cName">Base</span> mainnet deploy</h1>
+<p class="mut">24 transactions on <b><span class="cName">Base</span> (<span id="cId">8453</span>)</b>, all from your wallet <span class="mono">0xb19F00e095B1387061d73751C772bbA848D196b1</span> (deployer, and timelock proposer/executor for steps 23–24). This page holds no keys; it only asks your wallet to send the exact pre-built transactions below, one at a time.</p>
+<div class="note warn"><b>Do not use this wallet for ANY other transaction on Base, Ethereum, BNB Chain, ApeChain or Robinhood Chain</b> until every chain's launchpad deploy is finished. Contract addresses — including the cross-chain peers set in steps 8, 11, 14, 17 — are predicted from this wallet's current nonce on each chain. One stray transaction (a swap, an approval, a cancelled tx) moves the addresses and breaks the peers. Before every step this page re-reads your <span class="cName">Base</span> nonce and refuses to send if it is not exactly the expected one.</div>
 <div class="note">Phone: open this page inside your wallet app's built-in browser (MetaMask, Rabby, Coinbase Wallet…). Desktop: any injected wallet extension.</div>
 <div id="rpcWarn"></div>
 <div class="card"><h2>Wallet &amp; status</h2><div id="connInfo" class="mut">Not connected.</div><div id="nonceInfo" class="mut"></div><div id="costInfo" class="mut">Estimating cost…</div><div id="othersInfo" class="mut"></div>
 <button id="btnConnect">Connect wallet</button><button class="sec" id="btnRefresh">Re-check on-chain</button></div>
-<div class="card"><h2>Predicted Base addresses</h2><table id="addrs"></table></div>
+<div class="card"><h2>Predicted <span class="cName">Base</span> addresses</h2><table id="addrs"></table></div>
 <div id="steps"></div>
 <p class="mut">Progress is detected from on-chain state (contract code, owners, peers, LayerZero configs, timelock operation), so reloading resumes at the right step.</p>
 </main>
 <script src="plan.js"></script>
 <script>
-const PL=window.PLAN,D=PL.deployer.toLowerCase(),EXP='https://basescan.org';
-const qs=new URLSearchParams(location.search);const RPC=qs.get('rpc')||'https://mainnet.base.org';
-if(qs.get('rpc'))document.getElementById('rpcWarn').innerHTML=`<div class="note warn">TEST MODE: reading chain state from <span class="mono">${RPC.replace(/</g,'')}</span> instead of mainnet.base.org. Do not use this link for the real deploy.</div>`;
+const PL=window.PLAN,D=PL.deployer.toLowerCase();
+// Chain config: comes from plan.js (multi-chain build). The original Base plan.js has none, so default to Base.
+const CH=PL.chain||{key:'base',name:'Base',short:'Base',chainId:8453,explorer:'https://basescan.org',explorerName:'BaseScan',rpcs:['https://mainnet.base.org','https://base-rpc.publicnode.com','https://base.llamarpc.com','https://1rpc.io/base'],l1Fee:true,symbol:'ETH',storageKey:'lpBaseHashes'};
+const EXP=CH.explorer,XN=CH.explorerName,HEX='0x'+CH.chainId.toString(16),NS=PL.steps.length,TL_EXEC=PL.steps[NS-1],TL_SCHED=PL.steps[NS-2];
+document.querySelectorAll('.cName').forEach(e=>e.textContent=CH.short);document.getElementById('cId').textContent=CH.chainId;document.title=`MultiSea launchpad · ${CH.short} mainnet deploy signer`;
+document.getElementById('chainNav').innerHTML='Chain: '+[['base','Base'],['ethereum','Ethereum']].map(([k,n])=>k===CH.key?`<b>${n}</b>`:`<a href="${CH.key==='base'?k+'/':'../'+(k==='base'?'':k+'/')}">${n}</a>`).join(' · ');
+const qs=new URLSearchParams(location.search);const RPC=qs.get('rpc')||CH.rpcs[0];
+if(qs.get('rpc'))document.getElementById('rpcWarn').innerHTML=`<div class="note warn">TEST MODE: reading chain state from <span class="mono">${RPC.replace(/</g,'')}</span> instead of ${CH.short} mainnet. Do not use this link for the real deploy.</div>`;
 const pickWallet=()=>{const w=window.ethereum;if(w?.providers?.length){return w.providers.find(p=>p.isMetaMask&&!p.isPhantom)||w.providers.find(p=>!p.isPhantom)||w.providers[0];}return w;};
 let eth=pickWallet();window.addEventListener('eip6963:announceProvider',e=>{const p=e.detail?.provider;if(p&&(!eth||(eth.isPhantom&&!p.isPhantom)))eth=p;render();});window.dispatchEvent(new Event('eip6963:requestProvider'));
-let account=null,nonce=null,pnonce=null,done={},sending={},err={},hash=JSON.parse(localStorage.getItem('lpBaseHashes')||'{}'),opTs=0n,opReady=false,now=0;
+let account=null,nonce=null,pnonce=null,done={},sending={},err={},hash=JSON.parse(localStorage.getItem(CH.storageKey)||'{}'),opTs=0n,opReady=false,now=0;
 const $=id=>document.getElementById(id);const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const RPCS=qs.get('rpc')?[RPC]:['https://mainnet.base.org','https://base-rpc.publicnode.com','https://base.llamarpc.com','https://1rpc.io/base'];
+const RPCS=qs.get('rpc')?[RPC]:CH.rpcs;
 let rid=0,active=0,ri=0;const q=[];const slot=()=>active<3?(active++,Promise.resolve()):new Promise(r=>q.push(r));const rel=()=>{const n=q.shift();n?n():active--;};
 async function rpc1(method,params,url){const r=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:++rid,method,params})});if(!r.ok)throw Object.assign(Error('HTTP '+r.status),{retry:true});const j=await r.json();if(j.error)throw Error(j.error.message);if(j.result===undefined)throw Object.assign(Error('empty RPC result'),{retry:true});return j.result;}
 async function rpc(method,params=[],url){if(url)return rpc1(method,params,url);await slot();try{let e;for(let t=0;t<6;t++){try{return await rpc1(method,params,RPCS[ri%RPCS.length]);}catch(x){e=x;if(!x.retry&&!/rate|limit|timeout/i.test(x.message))throw x;ri++;await new Promise(z=>setTimeout(z,400*(t+1)));}}throw e;}finally{rel();}}
@@ -42,19 +48,19 @@ async function isDone(ch){if(ch.type==='code')return (await rpc('eth_getCode',[c
 const fmt=w=>(Number(w)/1e18).toFixed(6);
 async function refresh(){try{err.global=null;
  const [n,pn]=await Promise.all([rpc('eth_getTransactionCount',[D,'latest']),rpc('eth_getTransactionCount',[D,'pending'])]);nonce=Number(n);pnonce=Number(pn);
- let gap=false;for(const s of PL.steps.slice(0,23)){done[s.step]=gap?false:await isDone(s.check);if(!done[s.step])gap=true;}done[24]=done[23]?await isDone(PL.steps[23].check):false;
- const op=PL.steps[23].opId;const [ts,rd,blk]=await Promise.all([call({to:PL.predicted.timelock,data:'0xd45c4435'+op.slice(2)}),call({to:PL.predicted.timelock,data:'0x13bc9f20'+op.slice(2)}),rpc('eth_getBlockByNumber',['latest',false])]);
+ let gap=false;for(const s of PL.steps.slice(0,NS-1)){done[s.step]=gap?false:await isDone(s.check);if(!done[s.step])gap=true;}done[TL_EXEC.step]=done[TL_SCHED.step]?await isDone(TL_EXEC.check):false;
+ const op=TL_EXEC.opId;const [ts,rd,blk]=await Promise.all([call({to:PL.predicted.timelock,data:'0xd45c4435'+op.slice(2)}),call({to:PL.predicted.timelock,data:'0x13bc9f20'+op.slice(2)}),rpc('eth_getBlockByNumber',['latest',false])]);
  opTs=ts.length>2?BigInt(ts):0n;opReady=rd.length>2&&BigInt(rd)===1n;now=Number(BigInt(blk.timestamp));
 }catch(e){err.global='RPC read failed: '+e.message;}render();}
 function current(){return PL.steps.find(s=>!done[s.step]);}
-function canSend(s){const c=current();if(!eth||account!==D||!c||c.step!==s.step||sending[s.step])return false;if(nonce!==s.expectedNonce||pnonce!==s.expectedNonce)return false;if(s.step===24&&!opReady)return false;return true;}
+function canSend(s){const c=current();if(!eth||account!==D||!c||c.step!==s.step||sending[s.step])return false;if(nonce!==s.expectedNonce||pnonce!==s.expectedNonce)return false;if(s.step===TL_EXEC.step&&!opReady)return false;return true;}
 function render(){
  $('connInfo').innerHTML=!eth?'<span class="bad">No injected wallet found. Open this page in your wallet app\'s browser, or install a wallet extension.</span>':account?(account===D?`<span class="ok">Connected: ${account}</span>`:`<span class="bad">Connected ${account} — wrong account. Switch to ${PL.deployer}.</span>`):'Not connected.';
  const c=current();
- $('nonceInfo').innerHTML=nonce==null?'Reading nonce…':`Base nonce: <b>${nonce}</b>${pnonce!==nonce?` (pending ${pnonce})`:''} · plan starts at ${PL.startNonce} · `+(c?(nonce===c.expectedNonce&&pnonce===c.expectedNonce?`<span class="ok">matches step ${c.step} (expects ${c.expectedNonce}) ✓</span>`:`<span class="bad">step ${c.step} expects nonce ${c.expectedNonce} — sending is BLOCKED. ${nonce>c.expectedNonce?'An extra transaction was sent from this wallet; the predicted addresses no longer hold. Stop and regenerate the plan.':'Wait for pending transactions.'}</span>`):'<span class="ok">All 24 steps done ✓</span>');
+ $('nonceInfo').innerHTML=nonce==null?'Reading nonce…':`${CH.short} nonce: <b>${nonce}</b>${pnonce!==nonce?` (pending ${pnonce})`:''} · plan starts at ${PL.startNonce} · `+(c?(nonce===c.expectedNonce&&pnonce===c.expectedNonce?`<span class="ok">matches step ${c.step} (expects ${c.expectedNonce}) ✓</span>`:`<span class="bad">step ${c.step} expects nonce ${c.expectedNonce} — sending is BLOCKED. ${nonce>c.expectedNonce?'An extra transaction was sent from this wallet; the predicted addresses no longer hold. Stop and regenerate the plan.':'Wait for pending transactions.'}</span>`):`<span class="ok">All ${NS} steps done ✓</span>`);
  $('addrs').innerHTML=[['Timelock','timelock'],['Drop impl','dropImpl'],['Omni Drop impl','omniDropImpl'],['Omni Escrow','omniEscrow'],['Factory','factory']].map(([l,k])=>`<tr><td>${l}</td><td><a class="mono" target="_blank" rel="noopener" href="${EXP}/address/${PL.predicted[k]}">${PL.predicted[k]}</a></td></tr>`).join('')+`<tr><td>Fee</td><td>${PL.platformFeeBps} bps → <span class="mono">${PL.feeWallet}</span></td></tr>`;
  $('steps').innerHTML=(err.global?`<p class="bad">${esc(err.global)}</p>`:'')+PL.steps.map(s=>{const d=done[s.step],cur=c&&c.step===s.step,h=hash[s.step];
-  let extra='';if(s.step===24){if(opTs===0n)extra='Available 48h after step 23 confirms.';else if(opTs===1n)extra='<span class="ok">Executed.</span>';else{const left=Number(opTs)-now;extra=opReady?'<span class="ok">48h delay passed — ready to execute.</span>':`Unlocks at ${new Date(Number(opTs)*1000).toLocaleString()} (in ~${Math.max(0,Math.ceil(left/3600))}h).`;}}
+  let extra='';if(s.step===TL_EXEC.step){if(opTs===0n)extra=`Available 48h after step ${TL_SCHED.step} confirms.`;else if(opTs===1n)extra='<span class="ok">Executed.</span>';else{const left=Number(opTs)-now;extra=opReady?'<span class="ok">48h delay passed — ready to execute.</span>':`Unlocks at ${new Date(Number(opTs)*1000).toLocaleString()} (in ~${Math.max(0,Math.ceil(left/3600))}h).`;}}
   return `<div class="card ${cur?'cur':d?'':'off'}" id="card${s.step}"><h2>${s.step} · ${esc(s.label)} ${d?'<span class="ok">✓ done</span>':''}</h2><table>
   <tr><td>Target</td><td class="mono">${s.to?`<a target="_blank" rel="noopener" href="${EXP}/address/${s.to}">${s.to}</a>`:'(new contract) → '+s.creates}</td></tr>
   <tr><td>Expected nonce</td><td>${s.expectedNonce}</td></tr><tr><td>Detail</td><td class="mut">${esc(s.note)}</td></tr>${extra?`<tr><td>Timelock</td><td>${extra}</td></tr>`:''}</table>
@@ -62,30 +68,30 @@ function render(){
   ${h?`<p>Tx: <a class="mono" target="_blank" rel="noopener" href="${EXP}/tx/${h}">${h}</a></p>`:''}${err[s.step]?`<p class="bad">${esc(err[s.step])}</p>`:''}
   ${d?'':`<button id="send${s.step}" ${canSend(s)?'':'disabled'} onclick="send(${s.step})">${sending[s.step]?'Waiting…':'Sign &amp; send step '+s.step}</button>`}</div>`}).join('');}
 async function connect(){eth=eth||pickWallet();if(!eth)return render();const a=await eth.request({method:'eth_requestAccounts'});account=(a[0]||'').toLowerCase();render();}
-async function switchBase(){try{await eth.request({method:'wallet_switchEthereumChain',params:[{chainId:'0x2105'}]});}
- catch(e){if(e.code===4902||e?.data?.originalError?.code===4902)await eth.request({method:'wallet_addEthereumChain',params:[{chainId:'0x2105',chainName:'Base',nativeCurrency:{name:'Ether',symbol:'ETH',decimals:18},rpcUrls:['https://mainnet.base.org'],blockExplorerUrls:[EXP]}]});else throw e;}
- if(parseInt(await eth.request({method:'eth_chainId'}),16)!==8453)throw Error('Wallet is not on Base (8453).');}
+async function switchChain(){try{await eth.request({method:'wallet_switchEthereumChain',params:[{chainId:HEX}]});}
+ catch(e){if(e.code===4902||e?.data?.originalError?.code===4902)await eth.request({method:'wallet_addEthereumChain',params:[{chainId:HEX,chainName:CH.name,nativeCurrency:{name:'Ether',symbol:CH.symbol,decimals:18},rpcUrls:[CH.rpcs[0]],blockExplorerUrls:[EXP]}]});else throw e;}
+ if(parseInt(await eth.request({method:'eth_chainId'}),16)!==CH.chainId)throw Error(`Wallet is not on ${CH.name} (${CH.chainId}).`);}
 async function send(step){const s=PL.steps.find(x=>x.step===step);err[step]=null;sending[step]=true;render();
  try{const a=((await eth.request({method:'eth_requestAccounts'}))[0]||'').toLowerCase();account=a;if(a!==D)throw Error('Connected account is not '+PL.deployer);
-  await switchBase();await refresh();
+  await switchChain();await refresh();
   if(done[step])throw Error('Already done on-chain.');if(current().step!==step)throw Error('Step '+current().step+' must be done first.');
   const wn=parseInt(await eth.request({method:'eth_getTransactionCount',params:[a,'pending']}),16);
   if(nonce!==s.expectedNonce||pnonce!==s.expectedNonce||wn!==s.expectedNonce)throw Error(`Nonce check failed: expected ${s.expectedNonce}, chain latest ${nonce}, pending ${pnonce}, wallet ${wn}. Not sending.`);
-  if(step===24&&!opReady)throw Error('Timelock operation is not ready yet (48h delay).');
+  if(step===TL_EXEC.step&&!opReady)throw Error('Timelock operation is not ready yet (48h delay).');
   const tx={from:a,data:s.data,value:'0x'+BigInt(s.value).toString(16)};if(s.to)tx.to=s.to;
   const g=await rpc('eth_estimateGas',[tx]);tx.gas='0x'+(BigInt(g)*12n/10n).toString(16);
-  const h=await eth.request({method:'eth_sendTransaction',params:[tx]});hash[step]=h;localStorage.setItem('lpBaseHashes',JSON.stringify(hash));render();
+  const h=await eth.request({method:'eth_sendTransaction',params:[tx]});hash[step]=h;localStorage.setItem(CH.storageKey,JSON.stringify(hash));render();
   let r=null;for(let t=0;t<200&&!r;t++){r=await rpc('eth_getTransactionReceipt',[h]).catch(()=>null);if(!r)await new Promise(z=>setTimeout(z,3000));}
-  if(!r)throw Error('No receipt yet — check BaseScan, then press Re-check on-chain.');if(r.status!=='0x1')throw Error('Transaction reverted. Check BaseScan.');
+  if(!r)throw Error(`No receipt yet — check ${XN}, then press Re-check on-chain.`);if(r.status!=='0x1')throw Error(`Transaction reverted. Check ${XN}.`);
   if(s.creates&&r.contractAddress?.toLowerCase()!==s.creates.toLowerCase())throw Error('Created '+r.contractAddress+' but expected '+s.creates+'. STOP.');
  }catch(e){err[step]=e.message||String(e);}sending[step]=false;await refresh();}
 async function estimate(){try{const gp=BigInt(await rpc('eth_gasPrice'));let l2=0n,l1=0n;
   for(const s of PL.steps.filter(s=>!done[s.step])){l2+=BigInt(s.gasHint||300000)*gp;const b=s.data.slice(2);const len=(b.length/2).toString(16).padStart(64,'0');
-   const enc='0x49948e0e'+'0'.repeat(62)+'20'+len+b+'0'.repeat((64-b.length%64)%64);const f=await call({to:'0x420000000000000000000000000000000000000F',data:enc});if(f.length>2)l1+=BigInt(f);}
+   const enc='0x49948e0e'+'0'.repeat(62)+'20'+len+b+'0'.repeat((64-b.length%64)%64);if(CH.l1Fee){const f=await call({to:'0x420000000000000000000000000000000000000F',data:enc});if(f.length>2)l1+=BigInt(f);}}
   const tot=(l2+l1)*13n/10n;const bal=BigInt(await rpc('eth_getBalance',[D,'latest']));let usd='';try{const p=(await (await fetch('https://api.coinbase.com/v2/prices/ETH-USD/spot')).json()).data.amount;usd=` ≈ $${(Number(tot)/1e18*p).toFixed(2)} (ETH $${(+p).toFixed(0)})`;}catch{}
   window.__cost={l2:l2.toString(),l1:l1.toString(),tot:tot.toString(),gp:gp.toString(),bal:bal.toString(),usd};
-  $('costInfo').innerHTML=`Balance: <b>${fmt(bal)} ETH</b> · remaining cost ≈ ${fmt(tot)} ETH${usd} (gas ${(Number(gp)/1e9).toFixed(4)} gwei, L2 ${fmt(l2)} + L1 data ${fmt(l1)}, +30% buffer) `+(bal<tot?'<span class="bad">BALANCE TOO LOW — top up before starting.</span>':'<span class="ok">balance OK ✓</span>');}catch(e){$('costInfo').textContent='Cost estimate failed: '+e.message;}}
-async function others(){const out=await Promise.all(Object.entries(PL.others).map(async([k,o])=>{try{const n=Number(await rpc('eth_getTransactionCount',[D,'latest'],o.rpc));return n===o.nonce?`${k} ${n} ✓`:`<span class="bad">${k} nonce is ${n}, plan assumed ${o.nonce} — the ${k} peer set on Base is only right if ${k}'s own deploy started at nonce ${o.nonce}</span>`;}catch{return `${k} ? (RPC unreachable)`;}}));
+  $('costInfo').innerHTML=`Balance: <b>${fmt(bal)} ETH</b> · remaining cost ≈ ${fmt(tot)} ETH${usd} (gas ${(Number(gp)/1e9).toFixed(4)} gwei, ${CH.l1Fee?`L2 ${fmt(l2)} + L1 data ${fmt(l1)}`:`execution ${fmt(l2)}`}, +30% buffer)${CH.l1Fee?'':` · gas price can spike; your wallet reserves gasLimit × maxFee per tx, so hold ≥ ${fmt(BigInt(Math.max(...PL.steps.map(s=>s.gasHint||300000)))*12n/10n*gp*3n)} ETH extra for the biggest step (3× gas)`} `+(bal<tot?'<span class="bad">BALANCE TOO LOW — top up before starting.</span>':'<span class="ok">balance OK ✓</span>');}catch(e){$('costInfo').textContent='Cost estimate failed: '+e.message;}}
+async function others(){const out=await Promise.all(Object.entries(PL.others).map(async([k,o])=>{try{if(o.deployed){const c=await rpc('eth_getCode',[o.escrow,'latest'],o.rpc);return c.length>2?`${k} deployed ✓ (escrow ${o.escrow.slice(0,8)}…, start nonce ${o.nonce})`:`<span class="bad">${k} escrow ${o.escrow} has no code</span>`;}const n=Number(await rpc('eth_getTransactionCount',[D,'latest'],o.rpc));return n===o.nonce?`${k} ${n} ✓`:`<span class="bad">${k} nonce is ${n}, plan assumed ${o.nonce} — the ${k} peer set on ${CH.short} is only right if ${k}'s own deploy started at nonce ${o.nonce}</span>`;}catch{return `${k} ? (RPC unreachable)`;}}));
  $('othersInfo').innerHTML='Other-chain nonces the peers were predicted from: '+out.join(' · ');}
 $('btnConnect').onclick=connect;$('btnRefresh').onclick=()=>{refresh().then(estimate);others();};
 if(eth){eth.on?.('accountsChanged',a=>{account=(a[0]||'').toLowerCase();render();});eth.request({method:'eth_accounts'}).then(a=>{account=(a[0]||'').toLowerCase()||null;render();}).catch(()=>{});}
